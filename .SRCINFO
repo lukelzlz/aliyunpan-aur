@@ -1,0 +1,23 @@
+pkgbase = aliyunpan-go-bin
+	pkgdesc = 阿里云盘命令行客户端，支持webdav文件服务、JavaScript插件、同步备份功能 (预编译版本)
+	pkgver = 0.3.8
+	pkgrel = 1
+	url = https://github.com/tickstep/aliyunpan
+	arch = x86_64
+	arch = aarch64
+	arch = i686
+	arch = armv7h
+	license = Apache-2.0
+	provides = aliyunpan
+	conflicts = aliyunpan-go
+	conflicts = aliyunpan-go-git
+	source_x86_64 = aliyunpan-0.3.8-x86_64.zip::https://github.com/tickstep/aliyunpan/releases/download/v0.3.8/aliyunpan-v0.3.8-linux-amd64.zip
+	sha256sums_x86_64 = 5b3ac988a22ab188d1e347711642e9dc7bc26673d4481d438cf4c59a2e01043c
+	source_aarch64 = aliyunpan-0.3.8-aarch64.zip::https://github.com/tickstep/aliyunpan/releases/download/v0.3.8/aliyunpan-v0.3.8-linux-arm64.zip
+	sha256sums_aarch64 = 531647874036daa663575c05fe3915a5570e6151719d23b1db2f743e7f40f427
+	source_i686 = aliyunpan-0.3.8-i686.zip::https://github.com/tickstep/aliyunpan/releases/download/v0.3.8/aliyunpan-v0.3.8-linux-386.zip
+	sha256sums_i686 = 8b52e4b93fa18b45435423f7d57f07fe517cc0844c69207caa11e88648aa2bd2
+	source_armv7h = aliyunpan-0.3.8-armv7h.zip::https://github.com/tickstep/aliyunpan/releases/download/v0.3.8/aliyunpan-v0.3.8-linux-armv7.zip
+	sha256sums_armv7h = f2003bf28ba6b3e397638f630294772c17e91384d556ed8aa96086ea92d9014f
+
+pkgname = aliyunpan-go-bin
