@@ -1,15 +1,25 @@
-# aliyunpan-go-bin
+# aliyunpan-xby-desktop
 
-阿里云盘命令行客户端 AUR 包（预编译版本）
+小白羊网盘 - 阿里云盘第三方桌面客户端 AUR 包
+
+## 功能特点
+
+- 多账号登录
+- 在线播放视频（原始/转码）
+- 在线预览图片、文档、PDF
+- 文件管理（上传、下载、重命名、移动、删除）
+- 批量改名、在线解压
+- 连接 Aria2 下载
+- 回收站、收藏夹、分享功能
 
 ## 安装
 
 ### 从 AUR 安装（发布后）
 
 ```bash
-yay -S aliyunpan-go-bin
+yay -S aliyunpan-xby-desktop
 # 或
-paru -S aliyunpan-go-bin
+paru -S aliyunpan-xby-desktop
 ```
 
 ### 本地安装
@@ -22,29 +32,18 @@ makepkg -si
 
 ## 使用
 
+安装后直接运行：
 ```bash
-# 登录
-aliyunpan login
-
-# 查看文件列表
-aliyunpan ls
-
-# 上传文件
-aliyunpan upload /local/path /remote/path
-
-# 下载文件
-aliyunpan download /remote/path /local/path
-
-# 同步
-aliyunpan sync start
+aliyunpan-xby
 ```
+
+或者在应用菜单中找到"小白羊网盘"
 
 ## 支持的架构
 
-- x86_64 (amd64)
-- aarch64 (arm64)
-- i686 (386)
-- armv7h (armv7)
+- x86_64
+- aarch64 (ARM64)
+- armv7h (ARMv7)
 
 ## 自动更新
 
@@ -56,11 +55,10 @@ aliyunpan sync start
 
 ## 上游项目
 
-- 仓库: https://github.com/tickstep/aliyunpan
-- 许可证: Apache-2.0
+- 仓库: https://github.com/gaozhangmin/aliyunpan
+- 许可证: MIT
 
 ## 相关 AUR 包
 
-- `aliyunpan-go` - 从源码编译版本
-- `aliyunpan-go-bin` - 本包，预编译版本
-- `aliyunpan-cli` - Python 版本客户端
+- `aliyunpan-go-bin` - CLI 命令行版本
+- `aliyunpan-cli` - Python CLI 客户端

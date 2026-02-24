@@ -1,43 +1,54 @@
 # Maintainer: Luke <lukelzlz@users.noreply.github.com>
 
-pkgname=aliyunpan-go-bin
+pkgname=aliyunpan-xby-desktop
 _pkgname=aliyunpan
-pkgver=0.3.8
+pkgver=3.13.5
 pkgrel=1
-pkgdesc="阿里云盘命令行客户端，支持webdav文件服务、JavaScript插件、同步备份功能 (预编译版本)"
-arch=('x86_64' 'aarch64' 'i686' 'armv7h')
-url="https://github.com/tickstep/aliyunpan"
-license=('Apache-2.0')
-provides=('aliyunpan')
-conflicts=('aliyunpan-go' 'aliyunpan-go-git')
-options=('!strip' '!emptydirs')
+pkgdesc="小白羊网盘 - 阿里云盘第三方桌面客户端，支持多账号、在线播放、文件管理"
+arch=('x86_64' 'aarch64' 'armv7h')
+url="https://github.com/gaozhangmin/aliyunpan"
+license=('MIT')
+depends=('gtk3' 'nss' 'libxss' 'libxtst' 'alsa-lib' 'libnotify' 'libxtst' 'xdg-utils')
+provides=('aliyunpan-xby')
+conflicts=('aliyunpan-xby' 'aliyunpan-xby-bin')
 
-source_x86_64=("$_pkgname-$pkgver-x86_64.zip::https://github.com/tickstep/aliyunpan/releases/download/v$pkgver/aliyunpan-v$pkgver-linux-amd64.zip")
-source_aarch64=("$_pkgname-$pkgver-aarch64.zip::https://github.com/tickstep/aliyunpan/releases/download/v$pkgver/aliyunpan-v$pkgver-linux-arm64.zip")
-source_i686=("$_pkgname-$pkgver-i686.zip::https://github.com/tickstep/aliyunpan/releases/download/v$pkgver/aliyunpan-v$pkgver-linux-386.zip")
-source_armv7h=("$_pkgname-$pkgver-armv7h.zip::https://github.com/tickstep/aliyunpan/releases/download/v$pkgver/aliyunpan-v$pkgver-linux-armv7.zip")
+source_x86_64=("$_pkgname-$pkgver-x86_64.AppImage::https://github.com/gaozhangmin/aliyunpan/releases/download/v$pkgver/XBYDriver-$pkgver-linux-x86_64.AppImage")
+source_aarch64=("$_pkgname-$pkgver-aarch64.AppImage::https://github.com/gaozhangmin/aliyunpan/releases/download/v$pkgver/XBYDriver-$pkgver-linux-arm64.AppImage")
+source_armv7h=("$_pkgname-$pkgver-armv7h.AppImage::https://github.com/gaozhangmin/aliyunpan/releases/download/v$pkgver/XBYDriver-$pkgver-linux-armv7l.AppImage")
 
-sha256sums_x86_64=('5b3ac988a22ab188d1e347711642e9dc7bc26673d4481d438cf4c59a2e01043c')
-sha256sums_aarch64=('531647874036daa663575c05fe3915a5570e6151719d23b1db2f743e7f40f427')
-sha256sums_i686=('8b52e4b93fa18b45435423f7d57f07fe517cc0844c69207caa11e88648aa2bd2')
-sha256sums_armv7h=('f2003bf28ba6b3e397638f630294772c17e91384d556ed8aa96086ea92d9014f')
+sha256sums_x86_64=('f38a9c2ca3ebc23ca1a507f958f95f919e6ada72568df35980dcf9667108620e')
+sha256sums_aarch64=('c575ecfd682169fad89ae8b87cdfe44550a06eb1c57a21ce67c929f215f75994')
+sha256sums_armv7h=('19631fe93714b7c9fda02cc3687dd76a9f68fa723be35a69cc97da9e04b4eff3')
+
+prepare() {
+    chmod +x "$_pkgname-$pkgver-*.AppImage"
+}
 
 package() {
-    cd "$srcdir"
+    # Install AppImage
+    install -Dm755 "$_pkgname-$pkgver-*.AppImage" "$pkgdir/opt/aliyunpan-xby/aliyunpan-xby.AppImage"
     
-    # Find the extracted directory
-    local _dir=$(find . -maxdepth 1 -type d -name "aliyunpan-v${pkgver}-linux-*" | head -1)
-    
-    if [ -z "$_dir" ]; then
-        # Fallback: look for the binary directly
-        install -Dm755 "$_pkgname" "$pkgdir/usr/bin/$_pkgname"
-    else
-        install -Dm755 "$_dir/$_pkgname" "$pkgdir/usr/bin/$_pkgname"
-    fi
-    
-    # Install license
-    install -Dm644 /dev/stdin "$pkgdir/usr/share/licenses/$pkgname/LICENSE" <<EOF
-Apache License, Version 2.0
-See https://github.com/tickstep/aliyunpan for full license text.
+    # Create wrapper script
+    install -Dm755 /dev/stdin "$pkgdir/usr/bin/aliyunpan-xby" <<EOF
+#!/bin/bash
+exec /opt/aliyunpan-xby/aliyunpan-xby.AppImage "\$@"
+EOF
+
+    # Create desktop entry
+    install -Dm644 /dev/stdin "$pkgdir/usr/share/applications/aliyunpan-xby.desktop" <<EOF
+[Desktop Entry]
+Name=小白羊网盘
+Name[en]=AliyunPan XBY
+Comment=阿里云盘第三方桌面客户端
+Exec=aliyunpan-xby %U
+Icon=aliyunpan-xby
+Type=Application
+Categories=Network;FileTransfer;
+StartupNotify=true
+MimeType=x-scheme-handler/aliyunpan;
+EOF
+
+    # Create a placeholder icon (AppImage will provide its own)
+    install -Dm644 /dev/stdin "$pkgdir/usr/share/icons/hicolor/512x512/apps/aliyunpan-xby.png" <<EOF
 EOF
 }

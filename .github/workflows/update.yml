@@ -8,7 +8,7 @@ on:
     # Allow manual trigger
     inputs:
       version:
-        description: 'Specific version to update to (optional, e.g., 0.3.9)'
+        description: 'Specific version to update to (optional, e.g., 3.14.0)'
         required: false
 
 jobs:
@@ -26,7 +26,7 @@ jobs:
           if [ -n "${{ github.event.inputs.version }}" ]; then
             VERSION="${{ github.event.inputs.version }}"
           else
-            VERSION=$(curl -s https://api.github.com/repos/tickstep/aliyunpan/releases/latest | grep '"tag_name":' | sed -E 's/.*"v([^"]+)".*/\1/')
+            VERSION=$(curl -s https://api.github.com/repos/gaozhangmin/aliyunpan/releases/latest | grep '"tag_name":' | sed -E 's/.*"v([^"]+)".*/\1/')
           fi
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Latest version: $VERSION"
@@ -46,44 +46,41 @@ jobs:
             echo "Already up to date: $CURRENT"
           fi
 
-      - name: Download release assets and calculate checksums
+      - name: Download and calculate checksums
         if: steps.check-update.outputs.update_needed == 'true'
+        id: checksums
         run: |
           VERSION="${{ steps.get-version.outputs.version }}"
-          BASE_URL="https://github.com/tickstep/aliyunpan/releases/download/v${VERSION}"
+          BASE_URL="https://github.com/gaozhangmin/aliyunpan/releases/download/v${VERSION}"
           
-          # Download and calculate checksums for each architecture
-          echo "Downloading Linux AMD64..."
-          curl -sL "${BASE_URL}/aliyunpan-v${VERSION}-linux-amd64.zip" -o amd64.zip
-          SHA_AMD64=$(sha256sum amd64.zip | cut -d' ' -f1)
+          echo "Downloading x86_64 AppImage..."
+          curl -sL "${BASE_URL}/XBYDriver-${VERSION}-linux-x86_64.AppImage" -o x86_64.AppImage
+          SHA_X86=$(sha256sum x86_64.AppImage | cut -d' ' -f1)
           
-          echo "Downloading Linux ARM64..."
-          curl -sL "${BASE_URL}/aliyunpan-v${VERSION}-linux-arm64.zip" -o arm64.zip
-          SHA_ARM64=$(sha256sum arm64.zip | cut -d' ' -f1)
+          echo "Downloading aarch64 AppImage..."
+          curl -sL "${BASE_URL}/XBYDriver-${VERSION}-linux-arm64.AppImage" -o aarch64.AppImage
+          SHA_ARM64=$(sha256sum aarch64.AppImage | cut -d' ' -f1)
           
-          echo "Downloading Linux 386..."
-          curl -sL "${BASE_URL}/aliyunpan-v${VERSION}-linux-386.zip" -o i686.zip
-          SHA_I686=$(sha256sum i686.zip | cut -d' ' -f1)
+          echo "Downloading armv7h AppImage..."
+          curl -sL "${BASE_URL}/XBYDriver-${VERSION}-linux-armv7l.AppImage" -o armv7h.AppImage
+          SHA_ARMV7H=$(sha256sum armv7h.AppImage | cut -d' ' -f1)
           
-          echo "Downloading Linux ARMv7..."
-          curl -sL "${BASE_URL}/aliyunpan-v${VERSION}-linux-armv7.zip" -o armv7h.zip
-          SHA_ARMV7H=$(sha256sum armv7h.zip | cut -d' ' -f1)
-          
-          echo "sha_amd64=${SHA_AMD64}" >> $GITHUB_OUTPUT
+          echo "sha_x86=${SHA_X86}" >> $GITHUB_OUTPUT
           echo "sha_arm64=${SHA_ARM64}" >> $GITHUB_OUTPUT
-          echo "sha_i686=${SHA_I686}" >> $GITHUB_OUTPUT
           echo "sha_armv7h=${SHA_ARMV7H}" >> $GITHUB_OUTPUT
           
           echo "Checksums:"
-          echo "  x86_64:  ${SHA_AMD64}"
+          echo "  x86_64:  ${SHA_X86}"
           echo "  aarch64: ${SHA_ARM64}"
-          echo "  i686:    ${SHA_I686}"
           echo "  armv7h:  ${SHA_ARMV7H}"
 
       - name: Update PKGBUILD
         if: steps.check-update.outputs.update_needed == 'true'
         run: |
           VERSION="${{ steps.get-version.outputs.version }}"
+          SHA_X86="${{ steps.checksums.outputs.sha_x86 }}"
+          SHA_ARM64="${{ steps.checksums.outputs.sha_arm64 }}"
+          SHA_ARMV7H="${{ steps.checksums.outputs.sha_armv7h }}"
           
           # Update version
           sed -i "s/^pkgver=.*/pkgver=${VERSION}/" PKGBUILD
@@ -91,31 +88,34 @@ jobs:
           
           # Update download URLs
           sed -i "s|/releases/download/v[0-9.]\+/|/releases/download/v${VERSION}/|g" PKGBUILD
-          sed -i "s|aliyunpan-v[0-9.]\+-linux|aliyunpan-v${VERSION}-linux|g" PKGBUILD
+          sed -i "s|XBYDriver-[0-9.]\+-|XBYDriver-${VERSION}-|g" PKGBUILD
           sed -i "s|aliyunpan-[0-9.]\+-|aliyunpan-${VERSION}-|g" PKGBUILD
           
           # Update checksums
-          SHA_AMD64="${{ steps.download-release-assets-and-calculate-checksums.outputs.sha_amd64 }}"
-          SHA_ARM64="${{ steps.download-release-assets-and-calculate-checksums.outputs.sha_arm64 }}"
-          SHA_I686="${{ steps.download-release-assets-and-calculate-checksums.outputs.sha_i686 }}"
-          SHA_ARMV7H="${{ steps.download-release-assets-and-calculate-checksums.outputs.sha_armv7h }}"
-          
-          sed -i "s/^sha256sums_x86_64=.*/sha256sums_x86_64=('${SHA_AMD64}')/" PKGBUILD
+          sed -i "s/^sha256sums_x86_64=.*/sha256sums_x86_64=('${SHA_X86}')/" PKGBUILD
           sed -i "s/^sha256sums_aarch64=.*/sha256sums_aarch64=('${SHA_ARM64}')/" PKGBUILD
-          sed -i "s/^sha256sums_i686=.*/sha256sums_i686=('${SHA_I686}')/" PKGBUILD
           sed -i "s/^sha256sums_armv7h=.*/sha256sums_armv7h=('${SHA_ARMV7H}')/" PKGBUILD
           
+          echo "Updated PKGBUILD:"
           cat PKGBUILD
 
       - name: Update .SRCINFO
         if: steps.check-update.outputs.update_needed == 'true'
         run: |
           VERSION="${{ steps.get-version.outputs.version }}"
+          SHA_X86="${{ steps.checksums.outputs.sha_x86 }}"
+          SHA_ARM64="${{ steps.checksums.outputs.sha_arm64 }}"
+          SHA_ARMV7H="${{ steps.checksums.outputs.sha_armv7h }}"
           
           sed -i "s/pkgver = .*/pkgver = ${VERSION}/" .SRCINFO
           sed -i "s|/releases/download/v[0-9.]\+/|/releases/download/v${VERSION}/|g" .SRCINFO
+          sed -i "s|XBYDriver-[0-9.]\+-|XBYDriver-${VERSION}-|g" .SRCINFO
           sed -i "s|aliyunpan-[0-9.]\+-|aliyunpan-${VERSION}-|g" .SRCINFO
+          sed -i "s/sha256sums_x86_64 = .*/sha256sums_x86_64 = ${SHA_X86}/" .SRCINFO
+          sed -i "s/sha256sums_aarch64 = .*/sha256sums_aarch64 = ${SHA_ARM64}/" .SRCINFO
+          sed -i "s/sha256sums_armv7h = .*/sha256sums_armv7h = ${SHA_ARMV7H}/" .SRCINFO
           
+          echo "Updated .SRCINFO:"
           cat .SRCINFO
 
       - name: Commit and push changes
