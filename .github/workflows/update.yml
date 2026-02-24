@@ -2,13 +2,12 @@ name: Update AUR Package
 
 on:
   schedule:
-    # Check for updates daily at 00:00 UTC
-    - cron: '0 0 * * *'
+    # Check for updates weekly (Monday at 00:00 UTC)
+    - cron: '0 0 * * 1'
   workflow_dispatch:
-    # Allow manual trigger
     inputs:
       version:
-        description: 'Specific version to update to (optional, e.g., 3.14.0)'
+        description: 'Specific version to update to (optional, e.g., 6.9.0)'
         required: false
 
 jobs:
@@ -20,119 +19,72 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Get latest release version
-        id: get-version
+      - name: Check for new version
+        id: check-version
         run: |
+          # 获取当前版本
+          CURRENT=$(grep "^pkgver=" PKGBUILD | cut -d'=' -f2)
+          echo "current=$CURRENT" >> $GITHUB_OUTPUT
+          
+          # 尝试从网页获取最新版本（需要手动更新这个逻辑）
+          # 这里只是一个示例，实际需要根据官方下载页面调整
+          
           if [ -n "${{ github.event.inputs.version }}" ]; then
             VERSION="${{ github.event.inputs.version }}"
           else
-            VERSION=$(curl -s https://api.github.com/repos/gaozhangmin/aliyunpan/releases/latest | grep '"tag_name":' | sed -E 's/.*"v([^"]+)".*/\1/')
+            # 默认保持当前版本，需要手动触发更新
+            VERSION="$CURRENT"
           fi
+          
           echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "Latest version: $VERSION"
-
-      - name: Check if update needed
-        id: check-update
-        run: |
-          CURRENT=$(grep "^pkgver=" PKGBUILD | cut -d'=' -f2)
-          LATEST="${{ steps.get-version.outputs.version }}"
-          echo "current=$CURRENT" >> $GITHUB_OUTPUT
-          echo "latest=$LATEST" >> $GITHUB_OUTPUT
-          if [ "$CURRENT" != "$LATEST" ]; then
+          
+          if [ "$CURRENT" != "$VERSION" ]; then
             echo "update_needed=true" >> $GITHUB_OUTPUT
-            echo "Update needed: $CURRENT -> $LATEST"
+            echo "Update needed: $CURRENT -> $VERSION"
           else
             echo "update_needed=false" >> $GITHUB_OUTPUT
-            echo "Already up to date: $CURRENT"
+            echo "No update needed"
           fi
 
-      - name: Download and calculate checksums
-        if: steps.check-update.outputs.update_needed == 'true'
-        id: checksums
-        run: |
-          VERSION="${{ steps.get-version.outputs.version }}"
-          BASE_URL="https://github.com/gaozhangmin/aliyunpan/releases/download/v${VERSION}"
-          
-          echo "Downloading x86_64 AppImage..."
-          curl -sL "${BASE_URL}/XBYDriver-${VERSION}-linux-x86_64.AppImage" -o x86_64.AppImage
-          SHA_X86=$(sha256sum x86_64.AppImage | cut -d' ' -f1)
-          
-          echo "Downloading aarch64 AppImage..."
-          curl -sL "${BASE_URL}/XBYDriver-${VERSION}-linux-arm64.AppImage" -o aarch64.AppImage
-          SHA_ARM64=$(sha256sum aarch64.AppImage | cut -d' ' -f1)
-          
-          echo "Downloading armv7h AppImage..."
-          curl -sL "${BASE_URL}/XBYDriver-${VERSION}-linux-armv7l.AppImage" -o armv7h.AppImage
-          SHA_ARMV7H=$(sha256sum armv7h.AppImage | cut -d' ' -f1)
-          
-          echo "sha_x86=${SHA_X86}" >> $GITHUB_OUTPUT
-          echo "sha_arm64=${SHA_ARM64}" >> $GITHUB_OUTPUT
-          echo "sha_armv7h=${SHA_ARMV7H}" >> $GITHUB_OUTPUT
-          
-          echo "Checksums:"
-          echo "  x86_64:  ${SHA_X86}"
-          echo "  aarch64: ${SHA_ARM64}"
-          echo "  armv7h:  ${SHA_ARMV7H}"
-
       - name: Update PKGBUILD
-        if: steps.check-update.outputs.update_needed == 'true'
+        if: steps.check-version.outputs.update_needed == 'true'
         run: |
-          VERSION="${{ steps.get-version.outputs.version }}"
-          SHA_X86="${{ steps.checksums.outputs.sha_x86 }}"
-          SHA_ARM64="${{ steps.checksums.outputs.sha_arm64 }}"
-          SHA_ARMV7H="${{ steps.checksums.outputs.sha_armv7h }}"
+          VERSION="${{ steps.check-version.outputs.version }}"
           
           # Update version
           sed -i "s/^pkgver=.*/pkgver=${VERSION}/" PKGBUILD
           sed -i "s/^pkgrel=.*/pkgrel=1/" PKGBUILD
           
-          # Update download URLs
-          sed -i "s|/releases/download/v[0-9.]\+/|/releases/download/v${VERSION}/|g" PKGBUILD
-          sed -i "s|XBYDriver-[0-9.]\+-|XBYDriver-${VERSION}-|g" PKGBUILD
-          sed -i "s|aliyunpan-[0-9.]\+-|aliyunpan-${VERSION}-|g" PKGBUILD
+          # Update download URL
+          sed -i "s|adrive-desktop-[0-9.]\+-windows|adrive-desktop-${VERSION}-windows|g" PKGBUILD
           
-          # Update checksums
-          sed -i "s/^sha256sums_x86_64=.*/sha256sums_x86_64=('${SHA_X86}')/" PKGBUILD
-          sed -i "s/^sha256sums_aarch64=.*/sha256sums_aarch64=('${SHA_ARM64}')/" PKGBUILD
-          sed -i "s/^sha256sums_armv7h=.*/sha256sums_armv7h=('${SHA_ARMV7H}')/" PKGBUILD
-          
-          echo "Updated PKGBUILD:"
-          cat PKGBUILD
+          echo "Updated PKGBUILD to version ${VERSION}"
 
       - name: Update .SRCINFO
-        if: steps.check-update.outputs.update_needed == 'true'
+        if: steps.check-version.outputs.update_needed == 'true'
         run: |
-          VERSION="${{ steps.get-version.outputs.version }}"
-          SHA_X86="${{ steps.checksums.outputs.sha_x86 }}"
-          SHA_ARM64="${{ steps.checksums.outputs.sha_arm64 }}"
-          SHA_ARMV7H="${{ steps.checksums.outputs.sha_armv7h }}"
+          VERSION="${{ steps.check-version.outputs.version }}"
           
           sed -i "s/pkgver = .*/pkgver = ${VERSION}/" .SRCINFO
-          sed -i "s|/releases/download/v[0-9.]\+/|/releases/download/v${VERSION}/|g" .SRCINFO
-          sed -i "s|XBYDriver-[0-9.]\+-|XBYDriver-${VERSION}-|g" .SRCINFO
-          sed -i "s|aliyunpan-[0-9.]\+-|aliyunpan-${VERSION}-|g" .SRCINFO
-          sed -i "s/sha256sums_x86_64 = .*/sha256sums_x86_64 = ${SHA_X86}/" .SRCINFO
-          sed -i "s/sha256sums_aarch64 = .*/sha256sums_aarch64 = ${SHA_ARM64}/" .SRCINFO
-          sed -i "s/sha256sums_armv7h = .*/sha256sums_armv7h = ${SHA_ARMV7H}/" .SRCINFO
-          
-          echo "Updated .SRCINFO:"
-          cat .SRCINFO
+          sed -i "s|adrive-desktop-[0-9.]\+-windows|adrive-desktop-${VERSION}-windows|g" .SRCINFO
 
       - name: Commit and push changes
-        if: steps.check-update.outputs.update_needed == 'true'
+        if: steps.check-version.outputs.update_needed == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add PKGBUILD .SRCINFO
-          git commit -m "Update to v${{ steps.get-version.outputs.version }}"
+          git commit -m "Update to v${{ steps.check-version.outputs.version }}"
           git push
 
       - name: Create summary
         run: |
           echo "## Update Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ steps.check-update.outputs.update_needed }}" == "true" ]; then
-            echo "✅ Updated from \`${{ steps.check-update.outputs.current }}\` to \`${{ steps.check-update.outputs.latest }}\`" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.check-version.outputs.update_needed }}" == "true" ]; then
+            echo "✅ Updated to \`${{ steps.check-version.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
           else
-            echo "ℹ️ Already at latest version: \`${{ steps.check-update.outputs.current }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "ℹ️ No update needed. Current version: \`${{ steps.check-version.outputs.current }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "To manually update, trigger workflow with version input." >> $GITHUB_STEP_SUMMARY
           fi

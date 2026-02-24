@@ -1,0 +1,15 @@
+[Desktop Entry]
+Name=阿里云盘 (Wine)
+Name[en]=AliyunPan (Wine)
+Name[zh_CN]=阿里云盘 (Wine)
+Comment=阿里云盘官方客户端 - 通过 Wine 运行
+Comment[en]=AliyunPan Official Client - Running via Wine
+Comment[zh_CN]=阿里云盘官方客户端 - 通过 Wine 运行
+Exec=aliyunpan %U
+Icon=aliyunpan
+Terminal=false
+Type=Application
+Categories=Network;FileTransfer;
+StartupNotify=true
+MimeType=x-scheme-handler/aliyunpan;
+Keywords=阿里云盘;网盘;云存储;

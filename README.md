@@ -1,25 +1,21 @@
-# aliyunpan-xby-desktop
+# aliyunpan-wine
 
-小白羊网盘 - 阿里云盘第三方桌面客户端 AUR 包
+阿里云盘官方客户端 - 通过 Wine 在 Arch Linux 上运行
 
-## 功能特点
+## 特点
 
-- 多账号登录
-- 在线播放视频（原始/转码）
-- 在线预览图片、文档、PDF
-- 文件管理（上传、下载、重命名、移动、删除）
-- 批量改名、在线解压
-- 连接 Aria2 下载
-- 回收站、收藏夹、分享功能
+- 🎯 **官方客户端** - 直接使用阿里云盘 Windows 官方版本
+- 🍷 **Wine 运行** - 无需虚拟机，原生 Linux 体验
+- 🔄 **自动安装** - 首次运行自动初始化 Wine 环境并安装
 
 ## 安装
 
 ### 从 AUR 安装（发布后）
 
 ```bash
-yay -S aliyunpan-xby-desktop
+yay -S aliyunpan-wine
 # 或
-paru -S aliyunpan-xby-desktop
+paru -S aliyunpan-wine
 ```
 
 ### 本地安装
@@ -32,33 +28,83 @@ makepkg -si
 
 ## 使用
 
-安装后直接运行：
+### 首次运行
+
 ```bash
-aliyunpan-xby
+aliyunpan
 ```
 
-或者在应用菜单中找到"小白羊网盘"
+首次运行会自动：
+1. 创建 Wine 前缀 (`~/.local/share/wineprefixes/aliyunpan`)
+2. 初始化 Wine 环境
+3. 安装阿里云盘客户端
+4. 启动程序
 
-## 支持的架构
+### 其他命令
 
-- x86_64
-- aarch64 (ARM64)
-- armv7h (ARMv7)
+```bash
+aliyunpan install     # 重新安装
+aliyunpan uninstall   # 卸载（调用 Wine 卸载程序）
+aliyunpan winecfg     # 打开 Wine 配置
+aliyunpan help        # 显示帮助
+```
 
-## 自动更新
+## 依赖
 
-本仓库使用 GitHub Actions 自动检测上游更新并自动更新 PKGBUILD。
+- wine
+- wine-gecko
+- wine-mono
+- xdg-utils
 
-- 每天检查一次新版本
-- 自动下载新版本并计算校验和
-- 自动提交更新
+### 可选依赖
 
-## 上游项目
+- winetricks - 安装额外 Windows 组件
+- ttf-ms-fonts - 微软字体（更好的显示效果）
 
-- 仓库: https://github.com/gaozhangmin/aliyunpan
-- 许可证: MIT
+## 故障排除
 
-## 相关 AUR 包
+### 中文显示问题
 
-- `aliyunpan-go-bin` - CLI 命令行版本
-- `aliyunpan-cli` - Python CLI 客户端
+```bash
+# 安装中文字体
+sudo pacman -S wqy-microhei
+
+# 或复制 Windows 字体到 Wine
+cp /path/to/windows/fonts/sim* ~/.local/share/wineprefixes/aliyunpan/drive_c/windows/Fonts/
+```
+
+### 程序无法启动
+
+```bash
+# 重新初始化 Wine 环境
+rm -rf ~/.local/share/wineprefixes/aliyunpan
+aliyunpan install
+```
+
+### 高 DPI 显示问题
+
+```bash
+# 打开 Wine 配置，设置 DPI
+aliyunpan winecfg
+# 在"显示"选项卡中调整 DPI
+```
+
+## CI 自动更新
+
+本仓库使用 GitHub Actions 自动检测新版本：
+- 每天检查官方是否有新版本
+- 自动更新 PKGBUILD
+
+## 相关项目
+
+- [Deepin Wine 阿里云盘](https://aur.archlinux.org/packages/deepin-wine-adrive) - 使用 Deepin Wine 的版本
+- [小白羊网盘](https://github.com/gaozhangmin/aliyunpan) - 第三方原生客户端
+- [aliyunpan CLI](https://github.com/tickstep/aliyunpan) - 命令行客户端
+
+## 免责声明
+
+本项目仅用于学习和研究目的。阿里云盘是阿里巴巴集团的商标。请遵守阿里云盘的用户协议。
+
+## License
+
+MIT (仅限打包脚本) - 软件本身版权归阿里巴巴集团所有
